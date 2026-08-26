@@ -1123,9 +1123,12 @@ async function askAI(){
       let detail='';
       try{ const j=await error.context.json(); detail=j.error||''; }catch(e){}
       const st=(error.context&&error.context.status)||0;
-      if(st===404){
-        $('aiMsg').innerHTML='<div class="msg err">ยังไม่ได้ติดตั้งฟังก์ชัน <code>horo-ai</code> บน Supabase<br>'+
-          'รัน: <code>supabase functions deploy horo-ai</code> แล้วตั้ง secrets (ดู README_AI_setup.md)</div>';
+      const notDeployed = st===404 || !error.context ||
+        /failed to send a request|failed to fetch|networkerror/i.test(error.message||'');
+      if(notDeployed){
+        $('aiMsg').innerHTML='<div class="msg err">ยังเรียกฟังก์ชัน <code>horo-ai</code> ไม่ได้ — น่าจะยังไม่ได้ติดตั้งบน Supabase<br>'+
+          'รัน <code>supabase functions deploy horo-ai</code> แล้วตั้ง secrets (ดู README_AI_setup.md)'+
+          (detail?'<br><span style="opacity:.7">'+esc(detail)+'</span>':'')+'</div>';
       }else{
         $('aiMsg').innerHTML='<div class="msg err">'+esc(detail||error.message||'เรียก AI ไม่สำเร็จ')+'</div>';
       }
