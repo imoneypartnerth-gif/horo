@@ -109,7 +109,7 @@ async function callOpenAICompatible(
 }
 
 const DEFAULT_MODEL: Record<string, string> = {
-  gemini: "gemini-2.5-flash",
+  gemini: "gemini-3.6-flash",
   anthropic: "claude-sonnet-4-20250514",
   openai: "gpt-4o-mini",
   compatible: "",
@@ -132,7 +132,7 @@ Deno.serve(async (req) => {
     if (!u.ok) return json({ error: "session หมดอายุ กรุณาเข้าสู่ระบบใหม่" }, 401);
   } catch (_) { /* ปล่อยผ่าน ถ้า auth endpoint ล่ม ให้ JWT ของแพลตฟอร์มคุมแทน */ }
 
-  let body: { payload?: unknown; question?: string; client?: { name?: string } };
+  let body: { payload?: unknown; question?: string; scope?: string; client?: { name?: string } };
   try { body = await req.json(); } catch { return json({ error: "body ไม่ใช่ JSON" }, 400); }
   if (!body?.payload) return json({ error: "ไม่มีข้อมูลดวง (payload)" }, 400);
 
@@ -144,9 +144,15 @@ Deno.serve(async (req) => {
   if (!model) return json({ error: "ยังไม่ได้ตั้งค่า AI_MODEL" }, 500);
 
   const q = (body.question ?? "").trim();
+  const scope = (body.scope ?? "").trim();
   const who = body.client?.name ? `เจ้าชะตา: ${body.client.name}\n` : "";
+  const scopeLine = scope
+    ? `อ่านเฉพาะ "${scope}" เท่านั้น ห้ามอ่านทั้งดวง — ไล่เฉพาะชั้นที่เกี่ยวกับส่วนนี้ ` +
+      `(ตำแหน่ง → เจ้าเรือน → เรือนภพ → คู่ดาว → เกณฑ์ที่รับ/ส่ง → ตรียางค์/ฤกษ์) ` +
+      `แล้วสรุปสั้น ๆ ว่าส่วนนี้ให้ผลยังไงและควรใช้/ระวังยังไง ไม่ต้องปิดท้ายด้วย 3 หัวข้อ\n`
+    : "";
   const userMsg =
-    `${who}${q ? `คำถามเฉพาะ: ${q}\n` : "อ่านภาพรวมทั้งดวง\n"}\n` +
+    `${who}${scopeLine}${q ? `คำถามเฉพาะ: ${q}\n` : (scope ? "" : "อ่านภาพรวมทั้งดวง\n")}\n` +
     "ข้อมูลดวง (คำนวณครบ ๖ ชั้นแล้ว):\n```json\n" +
     JSON.stringify(body.payload) + "\n```";
 
