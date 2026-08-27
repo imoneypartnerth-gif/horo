@@ -238,13 +238,35 @@ a{color:var(--gold-d);}
 .ai-scope b{color:var(--ink2);}
 .ai-scope .dim{opacity:.5;font-weight:400;}
 .ai-tag{font-size:10.5px;padding:2px 8px;border-radius:6px;background:rgba(139,115,85,.12);color:var(--ink2);}
-.ai-out{margin-top:12px;font-size:13.5px;line-height:1.85;white-space:normal;}
+.ai-out{margin-top:14px;font-size:14px;line-height:1.95;white-space:normal;
+  font-family:'Prompt','Thonburi',sans-serif;color:var(--ink);}
 .ai-out:empty{display:none;}
-.ai-out h4{font-size:14px;margin:12px 0 4px;color:var(--ink2);}
-.ai-out ul{margin:4px 0 8px 18px;}
-.ai-out li{margin-bottom:3px;}
-.ai-out p{margin:0 0 8px;}
-.ai-out code{background:rgba(139,115,85,.12);padding:1px 5px;border-radius:4px;font-size:12.5px;}
+.ai-card{background:linear-gradient(180deg,rgba(253,250,246,.9),rgba(250,245,232,.55));
+  border:1px solid rgba(139,115,85,.22);border-radius:13px;padding:16px 18px 14px;
+  box-shadow:0 1px 8px rgba(90,70,45,.06);}
+.ai-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  font-size:10.5px;letter-spacing:.4px;color:rgba(74,53,32,.55);
+  padding-bottom:9px;margin-bottom:11px;border-bottom:1px solid rgba(139,115,85,.18);}
+.ai-head .k{padding:1px 8px;border-radius:5px;background:rgba(139,115,85,.10);}
+.ai-head .k.sc{background:rgba(186,117,23,.14);color:#7A4E0F;font-weight:600;}
+.ai-out h4{font-size:14.5px;font-weight:700;margin:16px 0 5px;color:#3D2B1A;
+  padding-left:9px;border-left:3px solid rgba(139,115,85,.45);line-height:1.5;}
+.ai-out h4:first-child{margin-top:0;}
+.ai-out h4.g{border-left-color:rgba(20,120,55,.75);color:#186B34;}
+.ai-out h4.b{border-left-color:rgba(170,35,35,.7);color:#8B2020;}
+.ai-out h4.l{border-left-color:rgba(186,117,23,.8);color:#7A4E0F;}
+.ai-out ul,.ai-out ol{margin:5px 0 11px 20px;padding:0;}
+.ai-out li{margin-bottom:4px;padding-left:2px;line-height:1.72;}
+.ai-out i{font-style:normal;color:#7A4E0F;font-weight:600;}
+.ai-out li::marker{color:rgba(139,115,85,.65);}
+.ai-out p{margin:0 0 10px;}
+.ai-out b{font-weight:600;color:#3D2B1A;}
+.ai-out code{background:rgba(139,115,85,.12);padding:1px 6px;border-radius:4px;font-size:13px;}
+.ai-out hr{border:none;border-top:1px dashed rgba(139,115,85,.30);margin:14px 0;}
+.ai-out .pn{font-weight:700;font-size:1.06em;}
+.ai-foot{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px;
+  padding-top:9px;border-top:1px solid rgba(139,115,85,.16);
+  font-size:10.5px;color:rgba(74,53,32,.45);}
 .share-panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;
   margin-top:16px;box-shadow:var(--shadow);}
 .share-panel h3{font-size:15px;color:var(--ink2);margin-bottom:10px;}
@@ -1137,17 +1159,60 @@ function aiScopePoll(){
   aiScopeRender();
 }
 setInterval(aiScopePoll,1200);
+// สีเลขดาว (เลขไทย) — ให้เข้าชุดกับวงจักรราศี
+const PNUM_COL={'๑':'#CC0000','๒':'#CC8800','๓':'#CC3377','๔':'#228833','๕':'#CC5500',
+  '๖':'#0077CC','๗':'#7722AA','๘':'#7B5230','๙':'#5C5C5C','๐':'#5C5C5C'};
 function aiMd(t){
-  // markdown แบบย่อ — escape ก่อนเสมอ
   let h=esc(t);
-  h=h.replace(/^###?\s*(.+)$/gm,'<h4>$1</h4>');
+  // หัวข้อ
+  h=h.replace(/^\s*#{1,6}\s*(.+?)\s*#*$/gm,'<h4>$1</h4>');
+  // **หัวข้อ** ที่อยู่บรรทัดเดียวโดด ๆ → ถือเป็นหัวข้อ
+  h=h.replace(/^\s*\*\*([^*\n]{2,40})\*\*\s*:?\s*$/gm,'<h4>$1</h4>');
   h=h.replace(/\*\*([^*\n]+)\*\*/g,'<b>$1</b>');
+  h=h.replace(/(^|[^*\w])\*([^*\n]+)\*(?!\*)/g,'$1<i>$2</i>');
+  h=h.replace(/(^|[^_\w])_([^_\n]+)_(?![_\w])/g,'$1<i>$2</i>');
   h=h.replace(/`([^`\n]+)`/g,'<code>$1</code>');
+  h=h.replace(/^\s*[-—_*]{3,}\s*$/gm,'<hr>');
+  // รายการ
+  h=h.replace(/^\s*\d+[.)]\s+(.+)$/gm,'<li data-n="1">$1</li>');
   h=h.replace(/^\s*[-*•]\s+(.+)$/gm,'<li>$1</li>');
-  h=h.replace(/(<li>[\s\S]*?<\/li>)(?!\s*<li>)/g,'<ul>$1</ul>');
-  h=h.replace(/(<\/(?:h4|li)>)\s*\n+/g,'$1').replace(/\n+(<(?:h4|ul|li))/g,'$1');
+  h=h.replace(/(<li[\s\S]*?<\/li>)(?!\s*<li)/g,function(m){
+    return (m.indexOf('data-n')>=0?'<ol>':'<ul>')+m+(m.indexOf('data-n')>=0?'</ol>':'</ul>');
+  });
+  h=h.replace(/(<\/(?:h4|li|hr)>|<hr>)\s*\n+/g,'$1').replace(/\n+(<(?:h4|ul|ol|li|hr))/g,'$1');
   h=h.replace(/\n{2,}/g,'</p><p>').replace(/\n/g,'<br>');
-  return '<p>'+h+'</p>';
+  h='<p>'+h+'</p>';
+  h=h.replace(/<p>\s*<\/p>/g,'');
+  // ระบายสีหัวข้อ จุดแข็ง/จุดอ่อน/คานงัด
+  h=h.replace(/<h4>([^<]*)<\/h4>/g,function(m,txt){
+    const c=/จุดแข็ง|ข้อดี|ส่งเสริม/.test(txt)?' class="g"':
+            (/จุดอ่อน|ข้อเสีย|ระวัง|จุดเสี่ยง/.test(txt)?' class="b"':
+            (/คานงัด|ข้อแนะนำ|แนวทาง|วิธีใช้/.test(txt)?' class="l"':''));
+    return '<h4'+c+'>'+txt+'</h4>';
+  });
+  // เลขดาวไทย → ใส่สีประจำดาว
+  h=h.replace(/([๐-๙])/g,function(m){
+    return '<span class="pn" style="color:'+(PNUM_COL[m]||'inherit')+'">'+m+'</span>';
+  });
+  return h;
+}
+function aiRender(data){
+  const sc=(AI_SCOPE==='focus'&&AI_FOCUS)?AI_FOCUS.label:'';
+  const head='<div class="ai-head">'+
+    '<span>🤖 คำอ่านจาก AI</span>'+
+    (sc?'<span class="k sc">'+esc(sc)+'</span>':'<span class="k">ทั้งดวง</span>')+
+    (data.model?'<span class="k">'+esc(data.model)+'</span>':'')+
+    '<span style="margin-left:auto">'+new Date().toLocaleString('th-TH',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+'</span></div>';
+  const foot='<div class="ai-foot"><button class="btn ghost sm" onclick="copyAIText()">📋 คัดลอกคำอ่าน</button>'+
+    '<span>เป็นการตีความจากข้อมูลที่คำนวณตามตำรา ใช้ประกอบการพิจารณาของโหร</span></div>';
+  return '<div class="ai-card">'+head+aiMd(data.text)+foot+'</div>';
+}
+function copyAIText(){
+  if(!AI_LAST) return;
+  navigator.clipboard.writeText(AI_LAST.text).then(function(){
+    $('aiMsg').innerHTML='<div class="msg ok">คัดลอกคำอ่านแล้ว</div>';
+    setTimeout(function(){ $('aiMsg').innerHTML=''; },2200);
+  });
 }
 async function askAI(){
   const p=aiPayload();
@@ -1181,7 +1246,7 @@ async function askAI(){
              scope:(AI_SCOPE==='focus'&&AI_FOCUS)?AI_FOCUS.label:''};
     $('aiModelTag').textContent=(data.provider||'')+(data.model?' · '+data.model:'');
     $('aiMsg').innerHTML='';
-    $('aiOut').innerHTML=aiMd(data.text);
+    $('aiOut').innerHTML=aiRender(data);
     $('aiSaveBtn').style.display='';
   }catch(e){
     $('aiMsg').innerHTML='<div class="msg err">'+esc(e.message||String(e))+'</div>';
